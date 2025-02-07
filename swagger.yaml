@@ -1,0 +1,948 @@
+openapi: 3.0.0
+info:
+  title: Social Media Management Platform API
+  version: 1.0.0
+  description: >
+    Comprehensive API specification for a Hootsuite-like social media management platform.  
+    This document covers multiple microservices, including user management, scheduling, marketing, analytics, asset, billing, engagement, and notification services.
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: https://staging-api.example.com
+    description: Staging server
+
+tags:
+  - name: user-service
+    description: Endpoints for user management
+  - name: scheduling-service
+    description: Endpoints for post scheduling
+  - name: marketing-service
+    description: Endpoints for marketing campaigns (boost, ads)
+  - name: analytics-service
+    description: Endpoints for post and campaign analytics
+  - name: asset-service
+    description: Endpoints for media asset uploads
+  - name: social-service
+    description: Endpoints for linking social media accounts
+  - name: billing-service
+    description: Endpoints for subscriptions and usage
+  - name: engagement-service
+    description: Endpoints for mentions, unified inbox, message management
+  - name: notification-service
+    description: Endpoints for user notifications
+
+components:
+  schemas:
+    #----------------------------------
+    # User Management Schemas
+    #----------------------------------
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MANAGER, CREATOR, ANALYST]
+        organizationId:
+          type: string
+          format: uuid
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+
+    UserPreferences:
+      type: object
+      properties:
+        timezone:
+          type: string
+        language:
+          type: string
+        notificationSettings:
+          type: object
+          properties:
+            emailNotifications:
+              type: boolean
+            pushNotifications:
+              type: boolean
+            digestFrequency:
+              type: string
+              enum: [DAILY, WEEKLY, NONE]
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        plan:
+          type: string
+          enum: [FREE, PROFESSIONAL, ENTERPRISE]
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        socialAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SocialAccount'
+
+    #----------------------------------
+    # Social & Posting Schemas
+    #----------------------------------
+    SocialAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, TIKTOK, YOUTUBE]
+        accountId:
+          type: string
+        accountName:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, EXPIRED, DISCONNECTED]
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        mediaAssets:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+        scheduledTime:
+          type: string
+          format: date-time
+        platforms:
+          type: array
+          items:
+            type: string
+            enum: [FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, TIKTOK, YOUTUBE]
+        status:
+          type: string
+          enum: [DRAFT, SCHEDULED, PUBLISHED, FAILED]
+        analytics:
+          $ref: '#/components/schemas/PostAnalytics'
+        campaign:
+          $ref: '#/components/schemas/Campaign'
+        author:
+          $ref: '#/components/schemas/User'
+        approvalStatus:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        tags:
+          type: array
+          items:
+            type: string
+
+    MediaAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [IMAGE, VIDEO, GIF]
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        metadata:
+          type: object
+          properties:
+            size:
+              type: integer
+            width:
+              type: integer
+            height:
+              type: integer
+            duration:
+              type: integer
+            format:
+              type: string
+
+    #----------------------------------
+    # Marketing Schemas
+    #----------------------------------
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [BOOST, AUTOMATED, MANUAL]
+        budget:
+          type: number
+        spent:
+          type: number
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, COMPLETED, DRAFT]
+        targeting:
+          $ref: '#/components/schemas/TargetingCriteria'
+        performance:
+          $ref: '#/components/schemas/CampaignPerformance'
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+
+    TargetingCriteria:
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            type: string
+        ageRange:
+          type: object
+          properties:
+            min:
+              type: integer
+            max:
+              type: integer
+        interests:
+          type: array
+          items:
+            type: string
+        gender:
+          type: array
+          items:
+            type: string
+            enum: [MALE, FEMALE, OTHER]
+        languages:
+          type: array
+          items:
+            type: string
+        optimizeFor:
+          type: string
+          enum: [REACH, ENGAGEMENT, CLICKS, CONVERSIONS]
+
+    #----------------------------------
+    # Analytics Schemas
+    #----------------------------------
+    PostAnalytics:
+      type: object
+      properties:
+        reach:
+          type: integer
+        engagement:
+          type: integer
+        clicks:
+          type: integer
+        impressions:
+          type: integer
+        reactions:
+          type: object
+          properties:
+            likes:
+              type: integer
+            shares:
+              type: integer
+            comments:
+              type: integer
+        demographics:
+          $ref: '#/components/schemas/Demographics'
+
+    CampaignPerformance:
+      type: object
+      properties:
+        reach:
+          type: integer
+        spent:
+          type: number
+        clicks:
+          type: integer
+        ctr:
+          type: number
+        cpc:
+          type: number
+        engagement:
+          type: integer
+        conversions:
+          type: integer
+        roas:
+          type: number
+
+    Demographics:
+      type: object
+      properties:
+        ageRanges:
+          type: object
+          additionalProperties:
+            type: number
+        genders:
+          type: object
+          additionalProperties:
+            type: number
+        locations:
+          type: object
+          additionalProperties:
+            type: number
+
+    #----------------------------------
+    # Billing & Subscription Schemas
+    #----------------------------------
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          enum: [FREE, PROFESSIONAL, ENTERPRISE]
+        status:
+          type: string
+          enum: [ACTIVE, PAST_DUE, CANCELLED]
+        billingCycle:
+          type: string
+          enum: [MONTHLY, ANNUAL]
+        features:
+          type: array
+          items:
+            type: string
+        limits:
+          type: object
+          properties:
+            posts:
+              type: integer
+            users:
+              type: integer
+            analytics:
+              type: string
+              enum: [BASIC, ADVANCED, PREMIUM]
+
+    #----------------------------------
+    # Engagement Schemas
+    #----------------------------------
+    Mention:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, TIKTOK, YOUTUBE]
+        text:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        authorAccountId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        isRead:
+          type: boolean
+
+    #----------------------------------
+    # Notification Schemas
+    #----------------------------------
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [POST_PUBLISHED, MENTION, PAYMENT_RECEIPT, ERROR, GENERAL]
+        message:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+
+paths:
+  #----------------------------------
+  # user-service
+  #----------------------------------
+  /user-service/users:
+    post:
+      tags:
+        - user-service
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    get:
+      tags:
+        - user-service
+      summary: Get all users
+      operationId: getAllUsers
+      parameters:
+        - name: organizationId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: role
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  #----------------------------------
+  # scheduling-service
+  #----------------------------------
+  /scheduling-service/posts:
+    post:
+      tags:
+        - scheduling-service
+      summary: Create a new post
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+    get:
+      tags:
+        - scheduling-service
+      summary: Get all posts
+      operationId: getAllPosts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, SCHEDULED, PUBLISHED, FAILED]
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: platform
+          in: query
+          schema:
+            type: string
+        - name: campaignId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  /scheduling-service/posts/{postId}:
+    put:
+      tags:
+        - scheduling-service
+      summary: Update a post
+      operationId: updatePost
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      responses:
+        '200':
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  #----------------------------------
+  # marketing-service
+  #----------------------------------
+  /marketing-service/campaigns:
+    post:
+      tags:
+        - marketing-service
+      summary: Create a new marketing campaign
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campaign'
+      responses:
+        '201':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+    get:
+      tags:
+        - marketing-service
+      summary: Get all campaigns
+      operationId: getAllCampaigns
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, PAUSED, COMPLETED, DRAFT]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [BOOST, AUTOMATED, MANUAL]
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campaign'
+
+  /marketing-service/campaigns/{campaignId}:
+    put:
+      tags:
+        - marketing-service
+      summary: Update a campaign
+      operationId: updateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campaign'
+      responses:
+        '200':
+          description: Campaign updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  #----------------------------------
+  # analytics-service
+  #----------------------------------
+  /analytics-service/posts/{postId}/metrics:
+    get:
+      tags:
+        - analytics-service
+      summary: Get post analytics
+      operationId: getPostAnalytics
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: timeRange
+          in: query
+          schema:
+            type: string
+            enum: [DAY, WEEK, MONTH, CUSTOM]
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Post analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAnalytics'
+
+  /analytics-service/campaigns/{campaignId}/performance:
+    get:
+      tags:
+        - analytics-service
+      summary: Get campaign performance metrics
+      operationId: getCampaignPerformance
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignPerformance'
+
+  #----------------------------------
+  # asset-service
+  #----------------------------------
+  /asset-service/media:
+    post:
+      tags:
+        - asset-service
+      summary: Upload media asset
+      operationId: uploadMedia
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [IMAGE, VIDEO, GIF]
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Media uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+
+  #----------------------------------
+  # social-service
+  #----------------------------------
+  /social-service/accounts:
+    post:
+      tags:
+        - social-service
+      summary: Connect social media account
+      operationId: connectSocialAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialAccount'
+      responses:
+        '201':
+          description: Social account connected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAccount'
+
+    get:
+      tags:
+        - social-service
+      summary: Get all connected social accounts
+      operationId: getAllSocialAccounts
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED, DISCONNECTED]
+      responses:
+        '200':
+          description: List of social accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SocialAccount'
+
+  #----------------------------------
+  # billing-service
+  #----------------------------------
+  /billing-service/subscriptions:
+    post:
+      tags:
+        - billing-service
+      summary: Create or update subscription
+      operationId: updateSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+      responses:
+        '200':
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+    get:
+      tags:
+        - billing-service
+      summary: Get subscription details
+      operationId: getSubscription
+      parameters:
+        - name: organizationId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  #----------------------------------
+  # engagement-service
+  #----------------------------------
+  /engagement-service/mentions:
+    get:
+      tags:
+        - engagement-service
+      summary: Get all mentions for the current user/organization
+      operationId: getAllMentions
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            type: string
+            enum: [FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, TIKTOK, YOUTUBE]
+        - name: isRead
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of mentions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mention'
+
+    post:
+      tags:
+        - engagement-service
+      summary: Create a mention record (e.g., ingest from social webhook)
+      operationId: createMention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mention'
+      responses:
+        '201':
+          description: Mention created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mention'
+
+  /engagement-service/mentions/{mentionId}:
+    patch:
+      tags:
+        - engagement-service
+      summary: Update a mention (e.g., mark as read)
+      operationId: updateMention
+      parameters:
+        - name: mentionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mention'
+      responses:
+        '200':
+          description: Mention updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mention'
+
+  #----------------------------------
+  # notification-service
+  #----------------------------------
+  /notification-service/notifications:
+    get:
+      tags:
+        - notification-service
+      summary: Get all notifications for the current user
+      operationId: getAllNotifications
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+    post:
+      tags:
+        - notification-service
+      summary: Create a new notification
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '201':
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
+  /notification-service/notifications/{notificationId}:
+    patch:
+      tags:
+        - notification-service
+      summary: Update a notification (e.g., mark as read)
+      operationId: updateNotification
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '200':
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
