@@ -112,6 +112,9 @@ components:
         id:
           type: string
           format: uuid
+        organizationId:
+          type: string
+          format: uuid
         platform:
           type: string
           enum: [FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, TIKTOK, YOUTUBE]
@@ -139,7 +142,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaAsset'
-        scheduledTime:
+        scheduledDateTime:
           type: string
           format: date-time
         platforms:
@@ -177,19 +180,17 @@ components:
           type: string
         thumbnailUrl:
           type: string
-        metadata:
-          type: object
-          properties:
-            size:
-              type: integer
-            width:
-              type: integer
-            height:
-              type: integer
-            duration:
-              type: integer
-            format:
-              type: string
+        size:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+        duration:
+          type: integer
+        format:
+          type: string
+
 
     #----------------------------------
     # Marketing Schemas
@@ -272,15 +273,12 @@ components:
           type: integer
         impressions:
           type: integer
-        reactions:
-          type: object
-          properties:
-            likes:
-              type: integer
-            shares:
-              type: integer
-            comments:
-              type: integer
+        likes:
+          type: integer
+        shares:
+          type: integer
+        comments:
+          type: integer
         demographics:
           $ref: '#/components/schemas/Demographics'
 
@@ -579,6 +577,27 @@ paths:
                   $ref: '#/components/schemas/Post'
 
   /scheduling-service/posts/{postId}:
+    get:
+      tags:
+        - scheduling-service
+      summary: Get a single post
+      operationId: getPostById
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A single post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
     put:
       tags:
         - scheduling-service
@@ -604,6 +623,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Post'
+    delete:
+      tags:
+        - scheduling-service
+      summary: Delete a post
+      operationId: deletePost
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Post deleted successfully
+        '404':
+          description: Post not found
 
   #----------------------------------
   # marketing-service
@@ -821,7 +857,56 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SocialAccount'
-
+  /social-service/accounts/{accountId}/refresh:
+    post:
+      tags:
+        - social-service
+      summary: Refresh a connected social media account
+      operationId: refreshSocialAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The ID of the social account to refresh
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forceRefresh:
+                  type: boolean
+                  description: If true, forces a refresh even if not expired
+      responses:
+        '200':
+          description: Credentials refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAccount'
+        '404':
+          description: Account not found
+  /social-service/accounts/{accountId}:
+    delete:
+      tags:
+        - social-service
+      summary: Remove/unlink a connected social media account
+      operationId: removeSocialAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The ID of the social account to unlink
+      responses:
+        '204':
+          description: Social account removed/unlinked successfully
+        '404':
+          description: Account not found
   #----------------------------------
   # billing-service
   #----------------------------------
