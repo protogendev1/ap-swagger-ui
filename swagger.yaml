@@ -3,7 +3,7 @@ info:
   title: Social Media Management Platform API
   version: 1.0.0
   description: >
-    Comprehensive API specification for a Hootsuite-like social media management platform.  
+    Comprehensive API specification for a Hootsuite-like social media management platform.
     This document covers multiple microservices, including user management, scheduling, marketing, analytics, asset, billing, engagement, and notification services.
 
 servers:
@@ -47,6 +47,10 @@ components:
           type: string
           format: email
         firstName:
+          type: string
+        profileUrl:
+          type: string
+        password:
           type: string
         lastName:
           type: string
@@ -420,7 +424,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-
     get:
       tags:
         - user-service
@@ -445,6 +448,54 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+  "/user-service/users/login":
+    get:
+      tags:
+        - users
+      summary: login to get a user by the email and password
+      description: return a user that matches the login details provided
+      operationId: login
+      parameters:
+        - name: Authorization
+          required: true
+          schema:
+            type: string
+          in: header
+          example: Basic ZGVtbzpwQDU1dzByZA==
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: not authorized
+        "404":
+          description: invalid email or password
+  /user-service/users/logout:
+    post:
+      tags:
+        - user-service
+      summary: Log out a user
+      operationId: logoutUser
+      requestBody:
+        description: Include the user’s token or session ID so the server can invalidate it
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: The token to be invalidated
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized or invalid token
+
 
   #----------------------------------
   # scheduling-service
