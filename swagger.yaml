@@ -68,20 +68,20 @@ components:
     UserPreferences:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         timezone:
           type: string
         language:
           type: string
-        notificationSettings:
-          type: object
-          properties:
-            emailNotifications:
-              type: boolean
-            pushNotifications:
-              type: boolean
-            digestFrequency:
-              type: string
-              enum: [DAILY, WEEKLY, NONE]
+        emailNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        digestFrequency:
+          type: string
+          enum: [DAILY, WEEKLY, NONE]
 
     Organization:
       type: object
@@ -347,6 +347,8 @@ components:
           properties:
             posts:
               type: integer
+            accounts:
+              type: integer
             users:
               type: integer
             analytics:
@@ -405,6 +407,22 @@ paths:
   #----------------------------------
   # user-service
   #----------------------------------
+  /user-service/sso/login:
+    get:
+      summary: Initiate single sign-on flow
+      description: Redirect the user to your identity provider for login
+      operationId: initiateSSO
+      responses:
+        '302':
+          description: Redirect to the IdP
+  /user-service/sso/callback:
+    get:
+      summary: Complete single sign-on flow
+      description: The identity provider calls back here with an authorization code or token
+      operationId: completeSSO
+      responses:
+        '200':
+          description: SSO completed; user is logged in
   /user-service/users:
     post:
       tags:
